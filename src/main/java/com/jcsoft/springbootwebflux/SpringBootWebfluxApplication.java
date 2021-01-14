@@ -8,7 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import reactor.core.publisher.Flux;
+
+import java.time.LocalDate;
 
 @SpringBootApplication
 public class SpringBootWebfluxApplication
@@ -17,6 +20,8 @@ public class SpringBootWebfluxApplication
     private static final Logger LOG = LoggerFactory.getLogger(SpringBootWebfluxApplication.class);
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    private ReactiveMongoTemplate reactiveMongoTemplate;
 
     public static void main(String[] args)
     {
@@ -27,6 +32,8 @@ public class SpringBootWebfluxApplication
     public void run(String... args)
             throws Exception
     {
+        reactiveMongoTemplate.dropCollection("product").subscribe();
+
         Flux.just(Product.builder().name("TV Samsung LED").price(550.5).build(),
                   Product.builder().name("Camara Sony 4K").price(1220.5).build(),
                   Product.builder().name("Apple iPod").price(980.2).build(),
@@ -36,7 +43,10 @@ public class SpringBootWebfluxApplication
                   Product.builder().name("Dell Latitude 7400").price(1428.4).build(),
                   Product.builder().name("TV Sony Bravia OLED").price(1800.5).build())
             //el save devuelve Mono y queremos el product, asi que el flatMap convierte los elementos de cada Mono en un solo Flux que contiene products
-            .flatMap(prod -> productRepository.save(prod))
+            .flatMap(prod -> {
+                prod.setCreateAt(LocalDate.now());
+                return productRepository.save(prod);
+            })
             .subscribe(prod -> LOG.info("Insert: {} - {}", prod.getId(), prod.getName()));
     }
 }

@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @Builder
-@Document(collation = "product")
+@Document(collection = "product")
 public class Product
 {
     @Id
